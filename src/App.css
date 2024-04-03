@@ -1,6 +1,36 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
   text-align: center;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.boolean-container {
+  outline-color: white;
+  outline-style: solid;
+  outline-width: medium;
+  flex-wrap: wrap;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.control-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.random-button {
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+  cursor: pointer;
 }

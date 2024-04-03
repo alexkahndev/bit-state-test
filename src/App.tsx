@@ -1,5 +1,6 @@
 import { animated, useSprings, SpringRef } from "@react-spring/web";
 import { useState } from "react";
+import "./App.css";
 
 type ButtonSpring = {
   backgroundColor: string;
@@ -9,29 +10,41 @@ type ButtonSpring = {
 
 const App = () => {
   const numBools = 100;
-  const [flipped, setFlipped] = useState(Array(numBools).fill(false));
+  const [flipped, setFlipped] = useState(new Set());
   const [available, setAvailable] = useState(
-    Array.from({ length: numBools }, (_, i) => i),
+    new Set(Array.from({ length: numBools }, (_, i) => i)),
   );
 
+  const [lastIndexFlipped, setLastIndexFlipped] = useState(-1);
+  const [timeToFlipLast, setTimeToFlipLast] = useState(0);
+  const [timeToFlipLastRandom, setTimeToFlipLastRandom] = useState(0);
+  const [boolsFlipped, setBoolsFlipped] = useState(0);
+  const [totalTimeRandom, setTotalTimeRandom] = useState(0);
+  const [avgRandomTime, setAvgRandomTime] = useState(0);
   const flip = (index: number, api: SpringRef<ButtonSpring>) => {
     const timeStart = performance.now();
-    const newFlipped = [...flipped];
-    newFlipped[index] = !newFlipped[index];
+    const newFlipped = new Set(flipped);
+    if (newFlipped.has(index)) {
+      newFlipped.delete(index);
+    } else {
+      newFlipped.add(index);
+    }
     api.start((i) => {
       if (index !== i) return;
-
-      return { backgroundColor: newFlipped[index] ? "lightgreen" : "salmon" };
+      return {
+        backgroundColor: newFlipped.has(index) ? "lightgreen" : "salmon",
+      };
     });
 
     setFlipped(newFlipped);
     setLastIndexFlipped(index);
 
-    if (newFlipped[index]) {
-      setAvailable(available.filter((i) => i !== index));
+    if (newFlipped.has(index)) {
+      available.delete(index);
     } else {
-      setAvailable([...available, index]);
+      available.add(index);
     }
+    setAvailable(available);
 
     const timeEnd = performance.now();
     const timeToFlip = Number((timeEnd - timeStart).toFixed(3));
@@ -40,16 +53,20 @@ const App = () => {
 
   const flipRandomAvailable = () => {
     const timeStart = performance.now();
-    if (available.length > 0) {
-      const randomIndex = Math.floor(Math.random() * available.length);
-      flip(available[randomIndex], api);
+    if (available.size > 0) {
+      const randomIndex =
+        Array.from(available)[Math.floor(Math.random() * available.size)];
+      flip(randomIndex, api);
+      const timeEnd = performance.now();
+
+      const timeToFlipRandom = Number((timeEnd - timeStart).toFixed(3));
+      setTimeToFlipLastRandom(timeToFlipRandom);
+      setTotalTimeRandom((prev) => prev + timeToFlipRandom);
+      setBoolsFlipped((prev) => prev + 1);
+      setAvgRandomTime(Number((totalTimeRandom / boolsFlipped).toFixed(3)));
     } else {
       setLastIndexFlipped(-1);
     }
-    const timeEnd = performance.now();
-    
-    const timeToFlipRandom = Number((timeEnd - timeStart).toFixed(3));
-    setTimeToFlipLastRandom(timeToFlipRandom);
   };
 
   const [springs, api] = useSprings(numBools, () => ({
@@ -58,71 +75,32 @@ const App = () => {
     width: "100px",
   }));
 
-  const [lastIndexFlipped, setLastIndexFlipped] = useState(-1);
-  const [timeToFlipLast, setTimeToFlipLast] = useState(0);
-  const [timeToFlipLastRandom, setTimeToFlipLastRandom] = useState(0);
-
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <h1
-        style={{
-          textAlign: "center",
-          fontWeight: "bold",
-          textDecoration: "underline",
-        }}
-      >
-        Efficient Random Boolean Flip
-      </h1>
-      <div
-        style={{
-          outlineColor: "white",
-          outlineStyle: "solid",
-          outlineWidth: "medium",
-          flexWrap: "wrap",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+    <div className="page-container">
+      <h1 className="title">Efficient Random Boolean Flip</h1>
+      <div className="boolean-container">
         {springs.map((props, index) => (
-          <animated.button style={props} onClick={() => flip(index, api)}>
+          <animated.button
+            key={index}
+            style={props}
+            onClick={() => flip(index, api)}
+          >
             {index}
             <br />
-            {flipped[index] ? "On" : "Off"}
+            {flipped.has(index) ? "On" : "Off"}
           </animated.button>
         ))}
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <button
-          onClick={flipRandomAvailable}
-          style={{
-            padding: "15px 32px",
-            textAlign: "center",
-            textDecoration: "none",
-            fontSize: "16px",
-            margin: "4px 2px",
-            cursor: "pointer",
-          }}
-        >
+      <div className="control-container">
+        <button onClick={flipRandomAvailable} className="random-button">
           Flip Random Boolean
         </button>
         <div>
           <p>Last index flipped: {lastIndexFlipped}</p>
           <p>Time to flip last index: {timeToFlipLast} ms</p>
           <p>Time to flip last random index: {timeToFlipLastRandom} ms</p>
+          <p>Number of bools flipped: {boolsFlipped}</p>
+          <p>Average time to flip random index: {avgRandomTime} ms</p>
         </div>
       </div>
     </div>
